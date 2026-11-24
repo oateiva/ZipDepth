@@ -22,6 +22,7 @@ import torch
 import torch.nn as nn
 
 from zipdepth.model.architecture import create_model
+from zipdepth.utils.compile import compile_model
 from zipdepth.utils.model_utils import fuse_remaining_conv_bn, strip_state_dict_prefixes
 
 
@@ -315,7 +316,7 @@ def main():
     # 4. torch.compile
     if not args.no_compile and device == 'cuda':
         print(f"\n  Compiling ({args.compile_mode}) — warming up ...")
-        mc = torch.compile(_to_cl(copy.deepcopy(m_fused)), mode=args.compile_mode, fullgraph=False)
+        mc = compile_model(_to_cl(copy.deepcopy(m_fused)), mode=args.compile_mode, fullgraph=False)
         with torch.inference_mode():
             for _ in range(max(args.warmup, 30)):
                 mc(x); torch.cuda.synchronize()
@@ -327,7 +328,7 @@ def main():
         if args.fp16:
             if x_fp16 is None:
                 x_fp16 = x.half()
-            mc_fp16 = torch.compile(_to_cl(copy.deepcopy(m_fused).half()), mode=args.compile_mode, fullgraph=False)
+            mc_fp16 = compile_model(_to_cl(copy.deepcopy(m_fused).half()), mode=args.compile_mode, fullgraph=False)
             with torch.inference_mode():
                 for _ in range(max(args.warmup, 50)):
                     mc_fp16(x_fp16); torch.cuda.synchronize()

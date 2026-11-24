@@ -3,12 +3,26 @@
 import torch
 from torch.utils.data import Dataset
 import numpy as np
-from turbojpeg import TurboJPEG, TJPF_RGB
 from pathlib import Path
 from typing import Optional, List
 import cv2
 cv2.setNumThreads(0)
 import json
+
+try:
+    from turbojpeg import TurboJPEG, TJPF_RGB
+except ImportError:
+    TurboJPEG = None
+
+
+def _make_jpeg_decoder():
+    """TurboJPEG if the package and libjpeg-turbo shared library are present, else None (cv2 fallback)."""
+    if TurboJPEG is None:
+        return None
+    try:
+        return TurboJPEG()
+    except Exception:
+        return None
 
 
 def _as_str(value) -> str:
@@ -30,7 +44,7 @@ class LargeScaleDepthDataset(Dataset):
                  max_samples: Optional[int] = None):
 
         self.transform = transform
-        self._jpeg = TurboJPEG()
+        self._jpeg = _make_jpeg_decoder()
 
         index_path = Path(index_file)
         prefix = str(index_path.with_suffix(''))
@@ -160,7 +174,7 @@ class LargeScaleDepthDataset(Dataset):
         }
 
     def _load_rgb(self, path: str) -> np.ndarray:
-        if path.lower().endswith(('.jpg', '.jpeg')):
+        if self._jpeg is not None and path.lower().endswith(('.jpg', '.jpeg')):
             with open(path, 'rb') as f:
                 return self._jpeg.decode(f.read(), pixel_format=TJPF_RGB)
         else:

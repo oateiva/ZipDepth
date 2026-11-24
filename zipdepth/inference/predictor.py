@@ -25,6 +25,7 @@ except ImportError:
 
 from zipdepth.model.architecture import create_model
 from zipdepth.utils.colormap import depth_to_colormap
+from zipdepth.utils.compile import compile_model
 from zipdepth.utils.model_utils import strip_state_dict_prefixes
 
 
@@ -95,7 +96,7 @@ class DepthInference:
 
         if self.use_compile:
             print(f"Compiling model (mode={compile_mode}) ...")
-            self.model = torch.compile(self.model, mode=compile_mode, fullgraph=False)
+            self.model = compile_model(self.model, mode=compile_mode, fullgraph=False)
 
         # TurboJPEG
         self.jpeg_decoder = None

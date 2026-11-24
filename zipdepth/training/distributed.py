@@ -10,7 +10,9 @@ import torch.distributed as dist
 
 
 def setup_distributed():
-    """Initialise NCCL process group from torchrun environment variables.
+    """Initialise the process group from torchrun environment variables.
+
+    Uses NCCL where available, gloo otherwise (Windows builds ship without NCCL).
 
     Returns:
         (rank, world_size, local_rank, is_distributed)
@@ -19,7 +21,8 @@ def setup_distributed():
         rank       = int(os.environ['RANK'])
         world_size = int(os.environ['WORLD_SIZE'])
         local_rank = int(os.environ['LOCAL_RANK'])
-        dist.init_process_group(backend='nccl', init_method='env://',
+        backend = 'nccl' if dist.is_nccl_available() else 'gloo'
+        dist.init_process_group(backend=backend, init_method='env://',
                                 rank=rank, world_size=world_size)
         torch.cuda.set_device(local_rank)
         return rank, world_size, local_rank, True

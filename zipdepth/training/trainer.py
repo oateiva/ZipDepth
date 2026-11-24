@@ -18,6 +18,7 @@ except ImportError:
 
 from zipdepth.loss import ZipDepthLoss
 from zipdepth.training.visualization import depth_to_spectral
+from zipdepth.utils.compile import compile_model
 from zipdepth.utils.model_utils import strip_state_dict_prefixes
 
 
@@ -119,8 +120,7 @@ class ZipDepthTrainer:
             else None
         )
 
-        # Compile student for faster iteration (PyTorch >= 2.0)
-        self.student = torch.compile(self.student, mode="reduce-overhead")
+        self.student = compile_model(self.student, mode="reduce-overhead")
 
     def train(self, num_epochs: int, save_dir: str = './checkpoints', start_epoch: int = 0,
             save_every_steps: int = 0, max_step_checkpoints: int = 5, max_steps: int = 0):
